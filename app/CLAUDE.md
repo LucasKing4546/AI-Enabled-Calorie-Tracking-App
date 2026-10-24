@@ -1,4 +1,4 @@
-# /app (Role 1: Mobile app)
+# /app (Role 1: Mobile app, owner Mihai)
 
 Expo / React Native, TypeScript.
 

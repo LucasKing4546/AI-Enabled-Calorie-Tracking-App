@@ -1,4 +1,4 @@
-# /supabase (Role 2: Backend & data)
+# /supabase (Role 2: Backend & data, owner Kevin)
 
 Supabase: Postgres, Auth, Storage, RLS. Also owns the schema in `/contracts/db`.
 

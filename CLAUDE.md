@@ -21,8 +21,9 @@ Core flow: user photographs a meal (or types it, scans a barcode, or photographs
 | Mobile app | React Native + Expo, TypeScript |
 | Backend/data | Supabase (Postgres, Auth, Storage, RLS) |
 | AI service | Python FastAPI, **one service** with separate routers |
-| Meal recognition | Hosted vision-language model, prompted for strict JSON |
-| Label reading | OCR (ML Kit or Tesseract) + LLM structuring |
+| Meal recognition | Self-hosted open vision-language model, prompted for strict JSON |
+| Label reading | OCR (ML Kit or Tesseract) + the same model for structuring |
+| Model hosting | **No paid APIs.** LM Studio on Sebi's laptop, reached by the team over Tailscale. OpenAI-compatible API; the AI service reads `AI_BASE_URL` / `AI_MODEL` from `.env`, so moving the model elsewhere is config only. Details in `ai/CLAUDE.md` |
 | Nutrition data | USDA FoodData Central (generic foods), Open Food Facts (barcodes) |
 | Shared | GitHub monorepo, GitHub Actions CI, OpenAPI spec |
 
@@ -44,12 +45,12 @@ Mobile app (/app) ──data, auth──> Supabase (/supabase) ──> Open Food
 
 ## Ownership
 
-| Role | Folder(s) | Owns |
-|---|---|---|
-| 1. Mobile app | `/app` | All screens, live macro recalculation |
-| 2. Backend & data | `/supabase`, `/contracts/db` | Schema, migrations, RLS, storage, barcode lookup, account deletion, **mock API** |
-| 3. Meal AI (Lucas, suggested) | `/ai/meal` | `POST /ai/meal/photo`, `POST /ai/meal/text`, meal test set |
-| 4. Label AI & nutrition | `/ai/label`, `/ai/nutrition` | `POST /ai/label`, FDC lookup and macro calculator, label test set |
+| Role | Person | Folder(s) | Owns |
+|---|---|---|---|
+| 1. Mobile app | Mihai | `/app` | All screens, live macro recalculation |
+| 2. Backend & data | Kevin | `/supabase`, `/contracts/db` | Schema, migrations, RLS, storage, barcode lookup, account deletion, **mock API** |
+| 3. Meal AI | Sebi | `/ai/meal` | `POST /ai/meal/photo`, `POST /ai/meal/text`, meal test set |
+| 4. Label AI & nutrition | Lucas | `/ai/label`, `/ai/nutrition` | `POST /ai/label`, FDC lookup and macro calculator, label test set |
 
 Nobody edits another person's folder without a PR that person reviews. Shared by everyone: README, course reports A1–A5.
 

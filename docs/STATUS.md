@@ -15,8 +15,9 @@ Newest entries first. Format: `YYYY-MM-DD · role · landed / contract change / 
 ## Open decisions (kickoff)
 
 - [ ] Confirm the stack (or swap Supabase for our own backend)
-- [ ] Assign the four roles
-- [ ] Pick the vision model and who pays for API usage
+- [x] Assign the four roles: Mihai (1, app), Kevin (2, backend), Sebi (3, meal AI), Lucas (4, label AI & nutrition)
+- [x] Model hosting: no paid APIs. LM Studio on Sebi's laptop, shared over Tailscale (see `ai/CLAUDE.md`)
+- [ ] Pick the model (proposal: Qwen2.5-VL-7B-Instruct or newer Qwen-VL, one model for photos + text)
 - [ ] Map the phases onto the A1–A5 deadlines
 
 ## Log

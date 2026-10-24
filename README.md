@@ -21,6 +21,8 @@ graphify update .       # build the code graph (graphify-out/, git-ignored)
 
 The project hooks call `graphify` from your PATH.
 
+**Tailscale:** the AI model runs in LM Studio on Sebi's laptop. Install [Tailscale](https://tailscale.com/download) on your laptop and phone and accept Sebi's invite to the tailnet. Then copy `ai/.env.example` and `app/.env.example` to `.env` and fill in Sebi's Tailscale host name.
+
 ## Starting a Claude session
 
 Paste this, plus your role block from the dev plan, then the latest `docs/STATUS.md`:
