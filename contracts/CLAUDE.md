@@ -4,9 +4,10 @@ The shared source of truth for all four roles. **Read-only for every Claude sess
 
 | Path | Contents | Owner |
 |---|---|---|
-| `db/` | SQL migrations for every table | Role 2 |
-| `ai/` | JSON schemas: ingredient item, label result | Roles 3 & 4 |
-| `openapi.yaml` | AI endpoints + `GET /products/barcode/{code}` | All |
-| `ts/` | Shared TypeScript types + the single macro function (`per_100g × grams / 100`) | All |
+| `db/` | SQL migrations for every table | Kevin |
+| `ai/` | JSON schemas: ingredient item, label result | Sebi & Lucas |
+| `openapi.yaml` | AI service spec: `POST /meal/photo`, `POST /meal/text`, `POST /label/read`, `GET /foods/search` | All |
+| `ts/api.ts` | **Generated** from `openapi.yaml`; never edit by hand | All |
+| `ts/macros.ts` | The single macro function (`per_100g × grams / 100`) | Lucas |
 
-The mock server (role 2) and the AI service are checked against `openapi.yaml` in CI. If you change the spec, both must change in the same PR.
+CI checks that the FastAPI-generated OpenAPI matches `openapi.yaml` and type-checks the app against `ts/`. If you change the spec, regenerate `api.ts` and update the AI service in the same PR.

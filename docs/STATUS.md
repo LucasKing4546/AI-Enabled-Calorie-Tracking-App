@@ -3,22 +3,31 @@
 Update this when you merge. Paste it into your Claude session at the start of each work block.
 Newest entries first. Format: `YYYY-MM-DD · role · landed / contract change / blocked`.
 
-## Phase 0 checklist
+## Phase 0 checklist (26 Oct–1 Nov)
 
-- [x] Monorepo with `/app`, `/supabase`, `/ai`, `/contracts`, `/docs`
+- [x] Monorepo with `/app`, `/supabase`, `/ai`, `/eval`, `/contracts`, `/docs`
 - [x] Root `CLAUDE.md` and one per folder
 - [ ] DB schema, AI output JSON schemas and `openapi.yaml` agreed and merged
-- [ ] Mock API and AI stubs returning fixed JSON
+- [ ] FastAPI stubs returning fixed JSON deployed; DB seed data
 - [ ] CI and branch protection on
-- [ ] Everyone runs the app on their phone against the mocks
+- [ ] Everyone runs the app on their phone against the stubs
 
-## Open decisions (kickoff)
+## Decided (24 Oct)
 
-- [ ] Confirm the stack (or swap Supabase for our own backend)
-- [x] Assign the four roles: Mihai (1, app), Kevin (2, backend), Sebi (3, meal AI), Lucas (4, label AI & nutrition)
-- [x] Model hosting: no paid APIs. LM Studio on Sebi's laptop, shared over Tailscale (see `ai/CLAUDE.md`)
-- [ ] Pick the model (proposal: Qwen2.5-VL-7B-Instruct or newer Qwen-VL, one model for photos + text)
-- [ ] Map the phases onto the A1–A5 deadlines
+- Expo + Supabase (EU) + Python FastAPI AI service
+- Roles: Mihai (1, app), Kevin (2, backend), Sebi (3, meal AI), Lucas (4, label AI & nutrition)
+- Gemini Flash via the free Gemini API (AI Studio key), chosen over self-hosting
+- Test on Android and iOS; English UI; Romanian and English labels
+
+## Still open
+
+- [ ] A1–A5: dates and what each asks for, to pin the phases
+- [ ] iOS: who has an iPhone to test with Expo Go?
+- [ ] FastAPI hosting: Render free tier, Railway, or a university server?
+- [ ] Romanian dishes not in FDC: closest generic match or a small custom food table? (after first meal-photo tests)
+- [ ] Who creates the GitHub repo and owns the Supabase project (suggested: Kevin)?
+- [ ] One shared Gemini key on the backend, or one per developer for testing?
+- [ ] Day and time of the weekly integration call
 
 ## Log
 

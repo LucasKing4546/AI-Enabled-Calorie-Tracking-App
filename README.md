@@ -21,10 +21,12 @@ graphify update .       # build the code graph (graphify-out/, git-ignored)
 
 The project hooks call `graphify` from your PATH.
 
-**Tailscale:** the AI model runs in LM Studio on Sebi's laptop. Install [Tailscale](https://tailscale.com/download) on your laptop and phone and accept Sebi's invite to the tailnet. Then copy `ai/.env.example` and `app/.env.example` to `.env` and fill in Sebi's Tailscale host name.
+**Env files:** copy `ai/.env.example` and `app/.env.example` to `.env` and fill them in. The Gemini key comes from [Google AI Studio](https://aistudio.google.com) (free tier); a Gemini app subscription doesn't include API access. Test only with your own photos.
+
+**Phone:** install Expo Go (Android or iOS).
 
 ## Starting a Claude session
 
-Paste this, plus your role block from the dev plan, then the latest `docs/STATUS.md`:
+Paste this, plus the role prompt at the end of your own plan, then the latest `docs/STATUS.md`:
 
 > You're working on a 4-person team project: an AI calorie and macro tracking app. Read CLAUDE.md at the repo root, then the CLAUDE.md in my folder, then everything in /contracts. I own only my folder. Do not edit other folders or /contracts; if a contract needs to change, stop and write me a short proposal I can raise with the team. Code against /contracts, and use the mocks for anything my teammates haven't shipped yet. Work in small steps on a feature branch, with tests, and tell me what to put in docs/STATUS.md when we merge.

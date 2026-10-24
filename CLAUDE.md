@@ -8,51 +8,53 @@ AI calorie and macro tracking app, built by a 4-person team where each person wo
 
 Core flow: user photographs a meal (or types it, scans a barcode, or photographs a nutrition label) → AI returns an **editable ingredient list** (name, grams, confidence, per-100 g macros) → user edits grams with live recalculation → saves the meal.
 
+English UI. Labels in Romanian and English must be readable. Tested on Android and iOS.
+
 ## Session start
 
 1. Read this file, then the `CLAUDE.md` in the folder you're working in, then everything in `/contracts`.
 2. Read `docs/STATUS.md` for what has landed, what changed in a contract and what's blocked.
-3. Work only in your own folder (see ownership below). If a contract needs to change, **stop and write a short proposal** for the user to raise with the team. Don't edit `/contracts` yourself.
+3. Work only in your own folders (see ownership below). If a contract needs to change, **stop and write a short proposal** for the user to raise with the team. Don't edit `/contracts` yourself.
 
-## Stack (proposed, confirm at kickoff)
+## Stack (decided 24 Oct)
 
 | Layer | Choice |
 |---|---|
-| Mobile app | React Native + Expo, TypeScript |
-| Backend/data | Supabase (Postgres, Auth, Storage, RLS) |
-| AI service | Python FastAPI, **one service** with separate routers |
-| Meal recognition | Self-hosted open vision-language model, prompted for strict JSON |
-| Label reading | OCR (ML Kit or Tesseract) + the same model for structuring |
-| Model hosting | **No paid APIs.** LM Studio on Sebi's laptop, reached by the team over Tailscale. OpenAI-compatible API; the AI service reads `AI_BASE_URL` / `AI_MODEL` from `.env`, so moving the model elsewhere is config only. Details in `ai/CLAUDE.md` |
+| Mobile app | Expo (React Native, TypeScript), Expo Router, expo-camera for photos and barcodes. Runs in Expo Go |
+| Backend | Supabase: Postgres, Auth, Storage, RLS, **EU region**. `barcode-lookup` is a Supabase Edge Function |
+| AI service | Python FastAPI on a free host (TBD). Checks the user's Supabase access token on **every** request |
+| Models | **Gemini Flash** via the free Gemini API (Google AI Studio key) for meal photos, meal text and labels. No separate OCR library, no self-hosted models |
 | Nutrition data | USDA FoodData Central (generic foods), Open Food Facts (barcodes) |
-| Shared | GitHub monorepo, GitHub Actions CI, OpenAPI spec |
+| Evaluation | Python notebooks in `/eval` |
+
+**Gemini free tier:** Google may use prompts to improve its products. Test with your own photos only, never other people's data, and check the EEA terms before any real users. Stay inside free-tier limits: daily scan cap per user, resize photos before upload, cache results.
 
 ## Architecture
 
 ```
-Mobile app (/app) ──data, auth──> Supabase (/supabase) ──> Open Food Facts
+Mobile app (/app) ──data, auth──> Supabase (/supabase) ── barcode-lookup ──> Open Food Facts
        │
-       └──AI requests──> FastAPI AI service (/ai)
-                           ├─ meal      ──> vision model API
+       └──HTTPS + Supabase access token──> FastAPI AI service (/ai)
+                           ├─ meal      ──> Gemini
                            │    └─ calls nutrition to match foods
                            ├─ nutrition ──> FoodData Central
-                           └─ label     ──> OCR / LLM APIs
+                           └─ label     ──> Gemini
 ```
 
-- The app **only** talks to Supabase and the AI service, never to an external API directly. That way each owner can swap a model or data source without touching anyone else's code.
+- The app **only** talks to Supabase and the AI service, never to an external API directly. The Gemini key lives on the server, never in the app.
 - Meal AI turns detected foods into database entries by calling the nutrition module, not FDC directly.
-- Everything except the AI endpoints and `GET /products/barcode/{code}` is plain Supabase table access under RLS.
+- AI service endpoints: `POST /meal/photo`, `POST /meal/text`, `POST /label/read`, `GET /foods/search`. Everything else is plain Supabase table access under RLS.
 
 ## Ownership
 
-| Role | Person | Folder(s) | Owns |
+| Role | Person | Folders | Delivers |
 |---|---|---|---|
-| 1. Mobile app | Mihai | `/app` | All screens, live macro recalculation |
-| 2. Backend & data | Kevin | `/supabase`, `/contracts/db` | Schema, migrations, RLS, storage, barcode lookup, account deletion, **mock API** |
-| 3. Meal AI | Sebi | `/ai/meal` | `POST /ai/meal/photo`, `POST /ai/meal/text`, meal test set |
-| 4. Label AI & nutrition | Lucas | `/ai/label`, `/ai/nutrition` | `POST /ai/label`, FDC lookup and macro calculator, label test set |
+| 1. Mobile app | Mihai | `/app` | Every screen: login, today's log, meal scan + editable ingredient list, barcode scanner, label review, product library, recipes, history |
+| 2. Backend & data | Kevin | `/supabase/migrations`, `/supabase/functions/barcode-lookup`, `/supabase/functions/_shared`, repo and CI | Schema, RLS, storage, Auth, barcode lookup, meal saving, rate limits, account deletion, seed data |
+| 3. Meal AI | Sebi | `/ai/app/meal`, `/ai/tests/meal`, `/eval/meal` | Photo and text → editable ingredient list matched to food entries; meal test set and accuracy numbers |
+| 4. Label AI & nutrition | Lucas | `/ai/app/label`, `/ai/app/nutrition`, `/contracts/ts/macros.ts`, `/eval/label` | FastAPI service skeleton, auth check and deploy; label photo → per-100 g and per-serving values with checks; FDC food search; the shared macro calculator; label test set |
 
-Nobody edits another person's folder without a PR that person reviews. Shared by everyone: README, course reports A1–A5.
+Nobody edits another person's folders without a PR that person reviews. Shared by everyone: README, course reports A1–A5, testing your own part end to end in the app. Each person's detailed task list is in their own copy of the team plan, not in this repo.
 
 ## Contracts (`/contracts`)
 
@@ -60,33 +62,33 @@ Single source of truth. Code against these files, not against what you assume a 
 
 - `contracts/db/`: SQL migrations (tables: `profiles`, `foods`, `products`, `recipes`, `recipe_items`, `meals`, `meal_items`, `scans`)
 - `contracts/ai/`: JSON schemas for AI output
-- `contracts/openapi.yaml`: AI endpoints + barcode lookup
-- `contracts/ts/`: shared TypeScript types and the macro function
+- `contracts/openapi.yaml`: the AI service spec. TypeScript types are **generated** from it into `contracts/ts/api.ts`; don't hand-edit that file
+- `contracts/ts/`: shared TypeScript types and `macros.ts`
 
 **Ingredient item** (both meal endpoints return a list of these):
 ```json
 { "name": "scrambled eggs", "food_id": "fdc:173424", "grams": 120, "confidence": 0.72,
   "per_100g": { "kcal": 148, "protein": 10.0, "carbs": 1.6, "fat": 11.0 } }
 ```
-`food_id` is prefixed by source: `fdc`, `off`, `label`, `manual`. The label endpoint returns `per_100g`, `per_serving`, `serving_grams`, and a list of fields it couldn't read.
+`food_id` is prefixed by source: `fdc`, `off`, `label`, `manual`. `POST /label/read` returns `per_100g`, `per_serving`, `serving_grams`, and a list of fields it couldn't read.
 
-**Macro rule:** macros = `per_100g × grams / 100`. The app recalculates on every edit; the server stores a snapshot at save (`meal_items`). This lives in **one function in `/contracts/ts`** that everything uses. Don't reimplement it.
+**Macro rule:** macros = `per_100g × grams / 100`. The app recalculates on every edit; the server stores a snapshot at save (`meal_items`). This lives in **one function, `contracts/ts/macros.ts`**, that everything uses. Don't reimplement it.
 
 **Label sanity check:** kcal ≈ 4·protein + 4·carbs + 9·fat.
 
 ## Mocks first
 
-Nobody waits on anyone. The app runs against a mock server generated from `openapi.yaml` (owned by role 2). The AI routers start as stubs returning fixed sample JSON that matches `/contracts/ai`. Swap mocks for real endpoints in Phase 2.
+Nobody waits on anyone. In week 1 the AI service is deployed as FastAPI stubs returning fixed sample JSON that matches `/contracts/ai`, and the database gets seed data. The app builds against those; real endpoints replace the stubs in Phase 2.
 
 ## Git workflow
 
 - `main` is protected and always passes CI.
 - Branches: `<role>/<feature>`, e.g. `app/meal-edit-screen`, `ai/label-ocr`.
 - Every PR needs one teammate's review. **A PR touching `/contracts` needs all four.**
-- CI on every PR: lint, type-check, unit tests, and an OpenAPI check that the AI service and the mock still match the spec.
+- CI on every PR: lint, type-check, unit tests, a check that the FastAPI OpenAPI output matches `contracts/openapi.yaml`, and a type-check of the app against `/contracts/ts`.
 - Merge every 2–3 days; rebase on `main` before opening a PR.
 - After merging, tell the user what to add to `docs/STATUS.md` (what landed, contract changes, blockers).
-- Secrets (model API keys, Supabase service key) go in git-ignored `.env` files, with a committed `.env.example` beside each one.
+- Secrets (Gemini key, Supabase service key) go in git-ignored `.env` files, with a committed `.env.example` beside each one.
 
 ## Privacy
 
@@ -94,10 +96,12 @@ Food photos and eating habits are personal data: RLS on every table, private sto
 
 ## Phases
 
-0. Kickoff (wk 1): repo, CLAUDE.md files, contracts, mocks, CI. **Gate: contracts merged.**
-1. Build in parallel (wk 2–4) against mocks. **Gate: real endpoints live.**
-2. Integrate (wk 5–6): swap mocks for real ones. **Gate: demo on one phone.**
-3. Evaluate & polish (wk 7–8): accuracy numbers, privacy, demo, report.
+Final demo in the week of 11 Jan 2027; 21 Dec–4 Jan is a light holiday break. Move dates once the A1–A5 deadlines are pinned.
+
+0. Kickoff, 26 Oct–1 Nov: repo, CLAUDE.md files, contracts, stubs, CI. **Gate: contracts merged.**
+1. Build in parallel, 2–29 Nov, against stubs and seed data. **Gate: real endpoints live.**
+2. Integrate, 30 Nov–20 Dec: swap stubs for real ones. **Gate: demo on one phone.**
+3. Evaluate & polish, 5–15 Jan: accuracy numbers, privacy, demo, report.
 
 ## graphify
 
