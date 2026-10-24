@@ -1,0 +1,26 @@
+{
+  "extraKnownMarketplaces": {
+    "ecc": {
+      "source": { "source": "git", "url": "https://github.com/affaan-m/ECC.git" }
+    },
+    "alexgreensh-token-optimizer": {
+      "source": { "source": "github", "repo": "alexgreensh/token-optimizer" }
+    }
+  },
+  "enabledPlugins": {
+    "ecc@ecc": true,
+    "token-optimizer@alexgreensh-token-optimizer": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [{ "type": "command", "command": "graphify hook-guard search", "timeout": 10 }]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [{ "type": "command", "command": "graphify hook-guard read", "timeout": 10 }]
+      }
+    ]
+  }
+}
